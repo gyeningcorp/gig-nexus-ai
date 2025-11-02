@@ -1,15 +1,20 @@
 import { useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft } from "lucide-react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 const GetStarted = () => {
   const navigate = useNavigate();
   const { role } = useParams<{ role: "worker" | "customer" }>();
+  const { signUp } = useAuth();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -20,10 +25,39 @@ const GetStarted = () => {
     agreeToTerms: false,
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Handle signup logic
-    console.log("Form submitted:", formData);
+
+    if (formData.password !== formData.confirmPassword) {
+      toast({
+        title: "Error",
+        description: "Passwords do not match",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!role) return;
+
+    setLoading(true);
+    const name = `${formData.firstName} ${formData.lastName}`;
+    const { error } = await signUp(formData.email, formData.password, name, role);
+
+    if (error) {
+      toast({
+        title: "Signup Failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    } else {
+      toast({
+        title: "Success!",
+        description: "Account created successfully. Redirecting to dashboard..."
+      });
+      setTimeout(() => navigate("/dashboard"), 1500);
+    }
+
+    setLoading(false);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -148,14 +182,14 @@ const GetStarted = () => {
                 type="submit"
                 variant={role === "worker" ? "accent" : "hero"}
                 className="w-full"
-                disabled={!formData.agreeToTerms}
+                disabled={!formData.agreeToTerms || loading}
               >
-                Create Account
+                {loading ? "Creating Account..." : "Create Account"}
               </Button>
 
               <p className="text-center text-sm text-muted-foreground">
                 Already have an account?{" "}
-                <a href="#" className="text-primary hover:underline">
+                <a href="/login" className="text-primary hover:underline">
                   Sign in
                 </a>
               </p>
