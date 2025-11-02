@@ -33,6 +33,7 @@ const CustomerDashboard = () => {
   const [stats, setStats] = useState<Stats>({ totalJobs: 0, activeJobs: 0, totalSpent: 0 });
   const [recentJobs, setRecentJobs] = useState<Job[]>([]);
   const [activeJobs, setActiveJobs] = useState<Job[]>([]);
+  const [newlyAcceptedJobId, setNewlyAcceptedJobId] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -53,13 +54,35 @@ const CustomerDashboard = () => {
           filter: `customer_id=eq.${user.id}`
         },
         (payload) => {
-          // Refresh dashboard data when any job updates
-          fetchDashboardData();
-
-          // Show toast when job is accepted
           const updatedJob = payload.new as any;
+          
+          // When job is accepted, show prominent notification and highlight map
           if (updatedJob.status === 'in_progress') {
-            toast.success(`Job "${updatedJob.title}" has been accepted by a worker!`);
+            // Refresh dashboard data
+            fetchDashboardData();
+            
+            // Set newly accepted job for highlighting
+            setNewlyAcceptedJobId(updatedJob.id);
+            
+            // Show prominent toast notification
+            toast.success(`🎉 Job Accepted!`, {
+              description: `A worker is on their way for "${updatedJob.title}". Track their location below.`,
+              duration: 10000,
+            });
+            
+            // Scroll to active jobs section after a brief delay
+            setTimeout(() => {
+              const activeJobsSection = document.getElementById('active-jobs-section');
+              activeJobsSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 500);
+            
+            // Remove highlight after 5 seconds
+            setTimeout(() => {
+              setNewlyAcceptedJobId(null);
+            }, 5000);
+          } else {
+            // For other updates, just refresh data
+            fetchDashboardData();
           }
         }
       )
@@ -208,16 +231,31 @@ const CustomerDashboard = () => {
 
       {/* Active Jobs with Live Tracking */}
       {activeJobs.length > 0 && (
-        <div className="space-y-4">
-          <h2 className="text-2xl font-bold">Active Jobs - Live Tracking</h2>
+        <div id="active-jobs-section" className="space-y-4">
+          <div className="flex items-center gap-3">
+            <h2 className="text-2xl font-bold">Active Jobs - Live Tracking</h2>
+            <div className="flex items-center gap-2 text-sm">
+              <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse" />
+              <span className="text-green-600 font-medium">Live</span>
+            </div>
+          </div>
+          <p className="text-muted-foreground">Track your worker's location in real-time</p>
           {activeJobs.map((job) => (
-            <JobMapView
-              key={job.id}
-              jobLocation={job.location_coordinates}
-              workerId={job.worker_id}
-              jobTitle={job.title}
-              showRoute={true}
-            />
+            <div 
+              key={job.id} 
+              className={`transition-all duration-500 ${
+                newlyAcceptedJobId === job.id 
+                  ? 'ring-4 ring-green-500 ring-opacity-50 rounded-lg animate-pulse' 
+                  : ''
+              }`}
+            >
+              <JobMapView
+                jobLocation={job.location_coordinates}
+                workerId={job.worker_id}
+                jobTitle={job.title}
+                showRoute={true}
+              />
+            </div>
           ))}
         </div>
       )}
