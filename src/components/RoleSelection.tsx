@@ -1,9 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { UserCircle, Briefcase, Users } from "lucide-react";
+import { UserCircle, Briefcase } from "lucide-react";
 
 type RoleSelectionProps = {
-  onSelectRole: (role: "worker" | "customer" | "both") => void;
+  onSelectRole: (role: "worker" | "customer") => void;
 };
 
 const RoleSelection = ({ onSelectRole }: RoleSelectionProps) => {
@@ -15,11 +15,11 @@ const RoleSelection = ({ onSelectRole }: RoleSelectionProps) => {
             How Will You Use GoGig?
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Choose your role and start your journey. You can always switch or do both.
+            Choose your role and start your journey. You can sign up for both separately.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           <Card className="group p-8 bg-card/50 backdrop-blur-sm border-border hover:border-accent/50 transition-all duration-300 hover:shadow-glow cursor-pointer">
             <div className="flex flex-col items-center text-center">
               <div className="p-6 rounded-2xl bg-gradient-card mb-6 group-hover:scale-110 transition-transform">
@@ -54,25 +54,6 @@ const RoleSelection = ({ onSelectRole }: RoleSelectionProps) => {
                 className="w-full"
               >
                 Continue as Customer
-              </Button>
-            </div>
-          </Card>
-
-          <Card className="group p-8 bg-card/50 backdrop-blur-sm border-border hover:border-secondary/50 transition-all duration-300 hover:shadow-glow cursor-pointer">
-            <div className="flex flex-col items-center text-center">
-              <div className="p-6 rounded-2xl bg-gradient-card mb-6 group-hover:scale-110 transition-transform">
-                <Users className="w-12 h-12 text-secondary" />
-              </div>
-              <h3 className="text-2xl font-bold mb-3">I'm Both</h3>
-              <p className="text-muted-foreground mb-6">
-                Earn when you want, hire when you need
-              </p>
-              <Button 
-                variant="secondary"
-                onClick={() => onSelectRole("both")}
-                className="w-full"
-              >
-                Continue as Both
               </Button>
             </div>
           </Card>

@@ -4,7 +4,7 @@ import RoleSelection from "@/components/RoleSelection";
 import GigMarketplace from "@/components/GigMarketplace";
 import ServiceCategories from "@/components/ServiceCategories";
 
-type UserRole = "worker" | "customer" | "both" | null;
+type UserRole = "worker" | "customer" | null;
 
 const Index = () => {
   const [selectedRole, setSelectedRole] = useState<UserRole>(null);
