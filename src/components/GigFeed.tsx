@@ -11,6 +11,7 @@ import AvailableJobsMap from "./AvailableJobsMap";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import MaptilerTokenInput from "./MaptilerTokenInput";
 import { playNotificationSound } from "@/utils/notificationSound";
+import ConnectionStatus from "./ConnectionStatus";
 
 type Job = {
   id: string;
@@ -42,9 +43,9 @@ const GigFeed = () => {
       Notification.requestPermission();
     }
 
-    // Subscribe to new job insertions in real-time
+    // Subscribe to real-time job changes
     const channel = supabase
-      .channel('new-jobs-feed')
+      .channel('gig-feed-updates')
       .on(
         'postgres_changes',
         {
@@ -75,6 +76,28 @@ const GigFeed = () => {
               body: `${newJob.title} - $${newJob.price.toFixed(2)}`,
               icon: '/favicon.ico',
               tag: newJob.id,
+            });
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'jobs'
+        },
+        (payload) => {
+          const updatedJob = payload.new as any;
+          
+          // Remove job from feed if it's no longer open (accepted by someone)
+          if (updatedJob.status !== 'open') {
+            setJobs(prev => prev.filter(job => job.id !== updatedJob.id));
+            
+            toast({
+              title: "Job Taken",
+              description: `"${updatedJob.title}" was just accepted by another worker`,
+              duration: 3000,
             });
           }
         }
@@ -127,7 +150,10 @@ const GigFeed = () => {
   return (
     <div className="space-y-6">
       <WorkerStats />
-      <h1 className="text-3xl font-bold">Available Gigs</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Available Gigs</h1>
+        <ConnectionStatus />
+      </div>
 
       <Tabs defaultValue={jobs.length === 0 ? "map" : "list"} className="w-full">
         <TabsList className="grid w-full max-w-md grid-cols-2">

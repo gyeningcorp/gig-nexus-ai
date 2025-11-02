@@ -12,6 +12,7 @@ import JobMapView from "@/components/JobMapView";
 import { useLocationTracking } from "@/hooks/useLocationTracking";
 import { SimulatedGPS, calculateDistance, estimateTravelTime } from "@/utils/simulatedGPS";
 import { Navigation, Clock, MapPin, CheckCircle } from "lucide-react";
+import ConnectionStatus from "@/components/ConnectionStatus";
 
 type Job = {
   id: string;
@@ -68,22 +69,44 @@ const MyJobs = () => {
             job.id === updatedJob.id ? updatedJob : job
           ));
 
-          // Show notification for customer when job is accepted
-          if (profile?.role === 'customer' && updatedJob.status === 'in_progress') {
-            toast({
-              title: "Job Accepted!",
-              description: `A worker has accepted "${updatedJob.title}"`,
-              duration: 5000,
-            });
+          // Notifications for CUSTOMER
+          if (profile?.role === 'customer') {
+            if (updatedJob.status === 'in_progress') {
+              toast({
+                title: "🎉 Job Accepted!",
+                description: `A worker is on their way for "${updatedJob.title}". Track them in real-time!`,
+                duration: 10000,
+              });
+            } else if (updatedJob.status === 'pending_confirmation') {
+              toast({
+                title: "⏰ Job Completed - Action Required",
+                description: `Worker has completed "${updatedJob.title}". Please confirm to release payment.`,
+                duration: 15000,
+              });
+            } else if (updatedJob.status === 'completed') {
+              toast({
+                title: "✅ Job Confirmed",
+                description: `"${updatedJob.title}" is complete. Payment sent to worker.`,
+                duration: 5000,
+              });
+            }
           }
 
-          // Show notification for worker when customer confirms completion
-          if (profile?.role === 'worker' && updatedJob.status === 'completed') {
-            toast({
-              title: "Payment Received!",
-              description: `Customer confirmed job completion. Payment added to wallet.`,
-              duration: 5000,
-            });
+          // Notifications for WORKER
+          if (profile?.role === 'worker') {
+            if (updatedJob.status === 'pending_confirmation') {
+              toast({
+                title: "⏰ Waiting for Customer",
+                description: `"${updatedJob.title}" marked complete. Awaiting customer confirmation.`,
+                duration: 8000,
+              });
+            } else if (updatedJob.status === 'completed') {
+              toast({
+                title: "💰 Payment Received!",
+                description: `Customer confirmed "${updatedJob.title}". Payment added to wallet.`,
+                duration: 10000,
+              });
+            }
           }
         }
       )
@@ -288,7 +311,10 @@ const MyJobs = () => {
   return (
     <ProtectedRoute>
       <DashboardLayout>
-        <h1 className="text-3xl font-bold mb-6">My Jobs</h1>
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-3xl font-bold">My Jobs</h1>
+          <ConnectionStatus />
+        </div>
 
         {jobs.length === 0 ? (
           <Card className="bg-card/50">

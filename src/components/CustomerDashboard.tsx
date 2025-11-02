@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { DollarSign, Briefcase, Clock, Plus, Wallet, List } from "lucide-react";
 import { toast } from "sonner";
 import JobMapView from "./JobMapView";
+import ConnectionStatus from "./ConnectionStatus";
 
 type Job = {
   id: string;
@@ -172,9 +173,12 @@ const CustomerDashboard = () => {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold mb-2">Welcome back, {profile?.name}!</h1>
-        <p className="text-muted-foreground">Here's what's happening with your jobs</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Welcome back, {profile?.name}!</h1>
+          <p className="text-muted-foreground">Here's what's happening with your jobs</p>
+        </div>
+        <ConnectionStatus />
       </div>
 
       {/* Stats Cards */}
