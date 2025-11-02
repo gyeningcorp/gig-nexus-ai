@@ -1,13 +1,30 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState } from "react";
+import Hero from "@/components/Hero";
+import RoleSelection from "@/components/RoleSelection";
+import GigMarketplace from "@/components/GigMarketplace";
+import ServiceCategories from "@/components/ServiceCategories";
+
+type UserRole = "worker" | "customer" | "both" | null;
 
 const Index = () => {
+  const [selectedRole, setSelectedRole] = useState<UserRole>(null);
+  const [showMarketplace, setShowMarketplace] = useState(false);
+
+  const handleRoleSelect = (role: UserRole) => {
+    setSelectedRole(role);
+    setShowMarketplace(true);
+  };
+
+  if (showMarketplace && selectedRole) {
+    return <GigMarketplace role={selectedRole} />;
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
-    </div>
+    <main className="min-h-screen bg-background">
+      <Hero />
+      <ServiceCategories />
+      <RoleSelection onSelectRole={handleRoleSelect} />
+    </main>
   );
 };
 
