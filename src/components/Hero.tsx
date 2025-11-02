@@ -1,7 +1,26 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 const Hero = () => {
+  const navigate = useNavigate();
+
+  const handleGetStarted = () => {
+    const roleSection = document.getElementById("role-selection");
+    if (roleSection) {
+      roleSection.scrollIntoView({ behavior: "smooth" });
+    } else {
+      navigate("/get-started/worker");
+    }
+  };
+
+  const handleWatchDemo = () => {
+    toast.info("Demo coming soon!", {
+      description: "We're working on an exciting demo video for you."
+    });
+  };
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Animated background gradient */}
@@ -35,6 +54,7 @@ const Hero = () => {
             size="lg" 
             variant="hero"
             className="group text-lg px-8 py-6"
+            onClick={handleGetStarted}
           >
             Get Started
             <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -44,6 +64,7 @@ const Hero = () => {
             size="lg" 
             variant="glass"
             className="text-lg px-8 py-6"
+            onClick={handleWatchDemo}
           >
             Watch Demo
           </Button>

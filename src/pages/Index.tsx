@@ -24,7 +24,9 @@ const Index = () => {
       </div>
       <Hero />
       <ServiceCategories />
-      <RoleSelection onSelectRole={handleRoleSelect} />
+      <div id="role-selection">
+        <RoleSelection onSelectRole={handleRoleSelect} />
+      </div>
     </main>
   );
 };

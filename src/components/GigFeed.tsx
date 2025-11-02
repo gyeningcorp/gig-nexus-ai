@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { MapPin, DollarSign } from "lucide-react";
+import WorkerStats from "@/components/WorkerStats";
 
 type Job = {
   id: string;
@@ -67,8 +68,9 @@ const GigFeed = () => {
   }
 
   return (
-    <div>
-      <h1 className="text-3xl font-bold mb-6">Available Gigs</h1>
+    <div className="space-y-6">
+      <WorkerStats />
+      <h1 className="text-3xl font-bold">Available Gigs</h1>
 
       {jobs.length === 0 ? (
         <Card className="bg-card/50">
