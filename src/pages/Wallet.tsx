@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/DashboardLayout";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -25,6 +26,19 @@ const Wallet = () => {
   const [loading, setLoading] = useState(false);
   const { user, profile } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
+
+  // Redirect workers away from wallet page
+  useEffect(() => {
+    if (profile?.role === "worker") {
+      toast({
+        title: "Access Denied",
+        description: "Wallet is only available for customers",
+        variant: "destructive"
+      });
+      navigate("/dashboard");
+    }
+  }, [profile, navigate, toast]);
 
   useEffect(() => {
     fetchTransactions();

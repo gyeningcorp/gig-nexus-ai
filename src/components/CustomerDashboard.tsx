@@ -50,7 +50,11 @@ const CustomerDashboard = () => {
 
       // Calculate stats
       const totalJobs = allJobs?.length || 0;
-      const activeJobs = allJobs?.filter(job => job.status === "in_progress" || job.status === "open").length || 0;
+      const activeJobs = allJobs?.filter(job => 
+        job.status === "in_progress" || 
+        job.status === "open" || 
+        job.status === "pending_confirmation"
+      ).length || 0;
       const totalSpent = allJobs?.reduce((sum, job) => sum + Number(job.price), 0) || 0;
 
       setStats({ totalJobs, activeJobs, totalSpent });
@@ -80,6 +84,8 @@ const CustomerDashboard = () => {
         return "bg-blue-500/10 text-blue-500 border-blue-500/20";
       case "in_progress":
         return "bg-yellow-500/10 text-yellow-500 border-yellow-500/20";
+      case "pending_confirmation":
+        return "bg-orange-500/10 text-orange-500 border-orange-500/20";
       case "completed":
         return "bg-green-500/10 text-green-500 border-green-500/20";
       default:

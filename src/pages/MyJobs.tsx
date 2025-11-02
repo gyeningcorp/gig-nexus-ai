@@ -1,14 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/DashboardLayout";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import JobMapView from "@/components/JobMapView";
 import { useLocationTracking } from "@/hooks/useLocationTracking";
+import { SimulatedGPS, calculateDistance, estimateTravelTime } from "@/utils/simulatedGPS";
+import { Navigation, Clock, MapPin, CheckCircle } from "lucide-react";
 
 type Job = {
   id: string;
@@ -28,8 +31,12 @@ type Job = {
 const MyJobs = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
+  const [simulatedLocation, setSimulatedLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [progress, setProgress] = useState(0);
+  const [estimatedTime, setEstimatedTime] = useState(0);
   const { user, profile } = useAuth();
   const { toast } = useToast();
+  const gpsSimulatorRef = useRef<SimulatedGPS | null>(null);
   
   // Track worker location for active jobs
   const hasActiveJobs = jobs.some(job => job.status === "in_progress" && profile?.role === "worker");
@@ -54,7 +61,38 @@ const MyJobs = () => {
     setLoading(false);
   };
 
-  const completeJob = async (job: Job) => {
+  // Worker marks job as pending confirmation (doesn't complete immediately)
+  const markPendingConfirmation = async (jobId: string) => {
+    // Stop GPS simulation
+    if (gpsSimulatorRef.current) {
+      gpsSimulatorRef.current.stop();
+      gpsSimulatorRef.current = null;
+      setSimulatedLocation(null);
+      setProgress(0);
+    }
+
+    const { error } = await supabase
+      .from("jobs")
+      .update({ status: "pending_confirmation" })
+      .eq("id", jobId);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update job status",
+        variant: "destructive"
+      });
+    } else {
+      toast({
+        title: "Awaiting Confirmation",
+        description: "Customer will confirm job completion before payment"
+      });
+      fetchJobs();
+    }
+  };
+
+  // Customer confirms job completion and releases payment
+  const confirmJobCompletion = async (job: Job) => {
     const { error: jobError } = await supabase
       .from("jobs")
       .update({ status: "completed" })
@@ -63,13 +101,27 @@ const MyJobs = () => {
     if (jobError) {
       toast({
         title: "Error",
-        description: "Failed to complete job",
+        description: "Failed to confirm job",
         variant: "destructive"
       });
       return;
     }
 
-    // Get worker's current balance and update it
+    // Deduct from customer wallet
+    const { data: customerProfile } = await supabase
+      .from("profiles")
+      .select("wallet_balance")
+      .eq("user_id", job.customer_id)
+      .single();
+
+    if (customerProfile) {
+      await supabase
+        .from("profiles")
+        .update({ wallet_balance: customerProfile.wallet_balance - job.price })
+        .eq("user_id", job.customer_id);
+    }
+
+    // Add to worker wallet
     const { data: workerProfile } = await supabase
       .from("profiles")
       .select("wallet_balance")
@@ -93,11 +145,56 @@ const MyJobs = () => {
     });
 
     toast({
-      title: "Job Completed!",
-      description: "Payment has been transferred to your wallet"
+      title: "Payment Released!",
+      description: `$${job.price.toFixed(2)} transferred to worker`
     });
 
     fetchJobs();
+  };
+
+  // Start simulated GPS for worker navigation
+  const startNavigation = (job: Job) => {
+    if (!job.location_coordinates) {
+      toast({
+        title: "No Location",
+        description: "Job location not available",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Use simulated start location (can be replaced with real geolocation)
+    const startLocation = { lat: job.location_coordinates.lat - 0.05, lng: job.location_coordinates.lng - 0.05 };
+    const endLocation = job.location_coordinates;
+
+    // Calculate initial distance and time
+    const distance = calculateDistance(startLocation, endLocation);
+    setEstimatedTime(Math.round(estimateTravelTime(distance)));
+
+    // Create GPS simulator
+    if (gpsSimulatorRef.current) {
+      gpsSimulatorRef.current.stop();
+    }
+
+    gpsSimulatorRef.current = new SimulatedGPS(
+      startLocation,
+      endLocation,
+      (location, progressPercent) => {
+        setSimulatedLocation(location);
+        setProgress(progressPercent);
+        
+        // Update estimated time based on remaining distance
+        const remainingDistance = calculateDistance(location, endLocation);
+        setEstimatedTime(Math.round(estimateTravelTime(remainingDistance)));
+      }
+    );
+
+    gpsSimulatorRef.current.start(3000); // Update every 3 seconds
+
+    toast({
+      title: "Navigation Started",
+      description: "Simulated GPS route active"
+    });
   };
 
   const cancelJob = async (jobId: string) => {
@@ -120,6 +217,15 @@ const MyJobs = () => {
       fetchJobs();
     }
   };
+
+  // Cleanup GPS simulator on unmount
+  useEffect(() => {
+    return () => {
+      if (gpsSimulatorRef.current) {
+        gpsSimulatorRef.current.stop();
+      }
+    };
+  }, []);
 
   if (loading) {
     return (
@@ -146,6 +252,43 @@ const MyJobs = () => {
           <div className="space-y-6">
             {jobs.map((job) => (
               <div key={job.id} className="space-y-4">
+                {/* Navigation Banner for Active Jobs (Worker View) */}
+                {profile?.role === "worker" && job.status === "in_progress" && simulatedLocation && (
+                  <Alert className="bg-gradient-primary border-primary">
+                    <Navigation className="h-4 w-4" />
+                    <AlertTitle className="font-bold">Navigation Active</AlertTitle>
+                    <AlertDescription className="space-y-2">
+                      <div className="flex items-center gap-4 text-sm">
+                        <div className="flex items-center gap-1">
+                          <Clock className="w-4 h-4" />
+                          <span>ETA: {estimatedTime} min</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <MapPin className="w-4 h-4" />
+                          <span>Progress: {Math.round(progress)}%</span>
+                        </div>
+                      </div>
+                      <div className="w-full bg-background/20 rounded-full h-2">
+                        <div 
+                          className="bg-white h-2 rounded-full transition-all duration-500"
+                          style={{ width: `${progress}%` }}
+                        />
+                      </div>
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {/* Pending Confirmation Alert (Customer View) */}
+                {profile?.role === "customer" && job.status === "pending_confirmation" && (
+                  <Alert className="bg-yellow-500/10 border-yellow-500/20">
+                    <CheckCircle className="h-4 w-4 text-yellow-500" />
+                    <AlertTitle className="text-yellow-500">Awaiting Your Confirmation</AlertTitle>
+                    <AlertDescription className="text-yellow-500/80">
+                      Worker has marked this job as complete. Please confirm to release payment.
+                    </AlertDescription>
+                  </Alert>
+                )}
+
                 <Card className="bg-card/50 backdrop-blur-sm">
                   <CardHeader>
                     <div className="flex justify-between items-start">
@@ -153,6 +296,7 @@ const MyJobs = () => {
                       <Badge variant={
                         job.status === "completed" ? "default" :
                         job.status === "in_progress" ? "secondary" :
+                        job.status === "pending_confirmation" ? "outline" :
                         job.status === "cancelled" ? "destructive" :
                         "outline"
                       } className="capitalize">
@@ -167,12 +311,43 @@ const MyJobs = () => {
                     <div className="text-sm text-muted-foreground capitalize">{job.type.replace("_", " ")}</div>
                   </CardContent>
 
-                  <CardFooter className="gap-2">
+                  <CardFooter className="gap-2 flex-col sm:flex-row">
+                    {/* Worker Actions */}
                     {profile?.role === "worker" && job.status === "in_progress" && (
-                      <Button variant="accent" className="w-full" onClick={() => completeJob(job)}>
-                        Mark Complete
+                      <>
+                        {!simulatedLocation && (
+                          <Button 
+                            variant="secondary" 
+                            className="w-full" 
+                            onClick={() => startNavigation(job)}
+                          >
+                            <Navigation className="w-4 h-4 mr-2" />
+                            Start Navigation
+                          </Button>
+                        )}
+                        <Button 
+                          variant="accent" 
+                          className="w-full" 
+                          onClick={() => markPendingConfirmation(job.id)}
+                        >
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          Mark Complete (Pending Confirmation)
+                        </Button>
+                      </>
+                    )}
+
+                    {/* Customer Actions */}
+                    {profile?.role === "customer" && job.status === "pending_confirmation" && (
+                      <Button 
+                        variant="accent" 
+                        className="w-full" 
+                        onClick={() => confirmJobCompletion(job)}
+                      >
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        Confirm Job Complete & Release Payment
                       </Button>
                     )}
+                    
                     {profile?.role === "customer" && job.status === "open" && (
                       <Button variant="destructive" className="w-full" onClick={() => cancelJob(job.id)}>
                         Cancel Job

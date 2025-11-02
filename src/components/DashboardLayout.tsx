@@ -18,7 +18,6 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const workerLinks = [
     { path: "/dashboard", label: "Gig Feed", icon: Home },
     { path: "/my-jobs", label: "My Jobs", icon: Briefcase },
-    { path: "/wallet", label: "Wallet", icon: Wallet },
     { path: "/schedule", label: "Schedule", icon: Calendar },
     { path: "/ratings", label: "Ratings", icon: Star },
   ];
