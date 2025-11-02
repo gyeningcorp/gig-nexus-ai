@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -13,6 +13,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import Map from "@/components/Map";
 import { MapPin } from "lucide-react";
+import MapboxTokenInput from "@/components/MapboxTokenInput";
 
 const NewJob = () => {
   const navigate = useNavigate();
@@ -29,6 +30,14 @@ const NewJob = () => {
   });
   const [locationCoordinates, setLocationCoordinates] = useState<{ lat: number; lng: number } | null>(null);
   const [showMap, setShowMap] = useState(false);
+  const [mapboxToken, setMapboxToken] = useState<string>('');
+
+  useEffect(() => {
+    const stored = localStorage.getItem('mapbox_token');
+    if (stored) {
+      setMapboxToken(stored);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -165,18 +174,24 @@ const NewJob = () => {
                     </Button>
                   </div>
                   {showMap && (
-                    <div className="border rounded-lg overflow-hidden">
-                      <Map
-                        jobLocation={locationCoordinates || undefined}
-                        onLocationSelect={(location) => {
-                          setLocationCoordinates(location);
-                          toast({
-                            title: "Location Set",
-                            description: `Coordinates: ${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}`,
-                          });
-                        }}
-                        className="w-full h-[300px]"
-                      />
+                    <div className="space-y-2">
+                      <MapboxTokenInput onTokenSet={setMapboxToken} />
+                      {mapboxToken && (
+                        <div className="border rounded-lg overflow-hidden">
+                          <Map
+                            jobLocation={locationCoordinates || undefined}
+                            onLocationSelect={(location) => {
+                              setLocationCoordinates(location);
+                              toast({
+                                title: "Location Set",
+                                description: `Coordinates: ${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}`,
+                              });
+                            }}
+                            className="w-full h-[300px]"
+                            accessToken={mapboxToken}
+                          />
+                        </div>
+                      )}
                     </div>
                   )}
                   {locationCoordinates && (

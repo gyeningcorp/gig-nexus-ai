@@ -5,8 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { MapPin, X } from 'lucide-react';
 
-mapboxgl.accessToken = 'pk.eyJ1IjoibG92YWJsZS1kZW1vIiwiYSI6ImNtNjBvZ2JmZDA4dGgyanNjZGx5cXR1eHoifQ.8LJPzKhxqTZLqK0iI4KxAw';
-
 interface Job {
   id: string;
   title: string;
@@ -22,16 +20,19 @@ interface Job {
 interface AvailableJobsMapProps {
   jobs: Job[];
   onJobSelect?: (job: Job) => void;
+  accessToken?: string;
 }
 
-const AvailableJobsMap = ({ jobs, onJobSelect }: AvailableJobsMapProps) => {
+const AvailableJobsMap = ({ jobs, onJobSelect, accessToken }: AvailableJobsMapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
 
   useEffect(() => {
-    if (!mapContainer.current || map.current) return;
+    if (!mapContainer.current || map.current || !accessToken) return;
+
+    mapboxgl.accessToken = accessToken;
 
     // Center on user's location or default
     navigator.geolocation.getCurrentPosition(
@@ -43,7 +44,7 @@ const AvailableJobsMap = ({ jobs, onJobSelect }: AvailableJobsMapProps) => {
         initMap(40.7128, -74.006);
       }
     );
-  }, []);
+  }, [accessToken]);
 
   const initMap = (lat: number, lng: number) => {
     if (!mapContainer.current) return;

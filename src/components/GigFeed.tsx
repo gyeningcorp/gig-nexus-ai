@@ -9,6 +9,7 @@ import { MapPin, DollarSign, Map as MapIcon, List } from "lucide-react";
 import WorkerStats from "@/components/WorkerStats";
 import AvailableJobsMap from "./AvailableJobsMap";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import MapboxTokenInput from "./MapboxTokenInput";
 
 type Job = {
   id: string;
@@ -28,6 +29,7 @@ type Job = {
 const GigFeed = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mapboxToken, setMapboxToken] = useState<string>('');
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -145,10 +147,14 @@ const GigFeed = () => {
         </TabsContent>
 
         <TabsContent value="map" className="mt-6">
-          <AvailableJobsMap 
-            jobs={jobs} 
-            onJobSelect={(job) => acceptJob(job.id)}
-          />
+          <MapboxTokenInput onTokenSet={setMapboxToken} />
+          {mapboxToken && (
+            <AvailableJobsMap 
+              jobs={jobs} 
+              onJobSelect={(job) => acceptJob(job.id)}
+              accessToken={mapboxToken}
+            />
+          )}
         </TabsContent>
       </Tabs>
     </div>

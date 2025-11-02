@@ -2,9 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
-// Mapbox public token (can be stored in code as it's public)
-mapboxgl.accessToken = 'pk.eyJ1IjoibG92YWJsZS1kZW1vIiwiYSI6ImNtNjBvZ2JmZDA4dGgyanNjZGx5cXR1eHoifQ.8LJPzKhxqTZLqK0iI4KxAw';
-
 interface Location {
   lat: number;
   lng: number;
@@ -18,6 +15,7 @@ interface MapProps {
   onLocationSelect?: (location: Location) => void;
   className?: string;
   zoom?: number;
+  accessToken?: string;
 }
 
 const Map = ({
@@ -27,7 +25,8 @@ const Map = ({
   showRoute = false,
   onLocationSelect,
   className = "w-full h-[400px]",
-  zoom = 13
+  zoom = 13,
+  accessToken
 }: MapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
@@ -36,7 +35,9 @@ const Map = ({
 
   // Initialize map
   useEffect(() => {
-    if (!mapContainer.current || map.current) return;
+    if (!mapContainer.current || map.current || !accessToken) return;
+
+    mapboxgl.accessToken = accessToken;
 
     const centerLocation = jobLocation || workerLocation || customerLocation || { lat: 40.7128, lng: -74.0060 };
 
@@ -66,7 +67,7 @@ const Map = ({
     return () => {
       map.current?.remove();
     };
-  }, []);
+  }, [accessToken]);
 
   // Update job location marker
   useEffect(() => {
