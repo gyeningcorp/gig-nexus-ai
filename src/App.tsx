@@ -25,23 +25,19 @@ const AppContent = () => {
   usePushNotifications(user?.id);
   
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/get-started/:role" element={<GetStarted />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/new-job" element={<NewJob />} />
-          <Route path="/my-jobs" element={<MyJobs />} />
-          <Route path="/wallet" element={<Wallet />} />
-          <Route path="/schedule" element={<Schedule />} />
-          <Route path="/ratings" element={<Ratings />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </AuthProvider>
-    </BrowserRouter>
+    <Routes>
+      <Route path="/" element={<Index />} />
+      <Route path="/get-started/:role" element={<GetStarted />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/new-job" element={<NewJob />} />
+      <Route path="/my-jobs" element={<MyJobs />} />
+      <Route path="/wallet" element={<Wallet />} />
+      <Route path="/schedule" element={<Schedule />} />
+      <Route path="/ratings" element={<Ratings />} />
+      {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+      <Route path="*" element={<NotFound />} />
+    </Routes>
   );
 };
 
@@ -51,7 +47,11 @@ const App = () => {
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <AppContent />
+        <BrowserRouter>
+          <AuthProvider>
+            <AppContent />
+          </AuthProvider>
+        </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
   );
