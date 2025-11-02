@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { DollarSign, Briefcase, Clock, Plus, Wallet, List } from "lucide-react";
 import { toast } from "sonner";
+import JobMapView from "./JobMapView";
 
 type Job = {
   id: string;
@@ -15,6 +16,8 @@ type Job = {
   price: number;
   status: string;
   created_at: string;
+  location_coordinates?: any;
+  worker_id?: string;
 };
 
 type Stats = {
@@ -29,6 +32,7 @@ const CustomerDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<Stats>({ totalJobs: 0, activeJobs: 0, totalSpent: 0 });
   const [recentJobs, setRecentJobs] = useState<Job[]>([]);
+  const [activeJobs, setActiveJobs] = useState<Job[]>([]);
 
   useEffect(() => {
     if (user) {
@@ -99,7 +103,19 @@ const CustomerDashboard = () => {
 
       if (recentError) throw recentError;
 
-      setRecentJobs(recent || []);
+      setRecentJobs(recent as Job[] || []);
+
+      // Get active jobs with worker assignments for map display
+      const { data: active, error: activeError } = await supabase
+        .from("jobs")
+        .select("*")
+        .eq("customer_id", user?.id)
+        .eq("status", "in_progress")
+        .not("worker_id", "is", null);
+
+      if (activeError) throw activeError;
+
+      setActiveJobs(active as Job[] || []);
     } catch (error: any) {
       console.error("Error fetching dashboard data:", error);
       toast.error("Failed to load dashboard data");
@@ -189,6 +205,22 @@ const CustomerDashboard = () => {
           Wallet
         </Button>
       </div>
+
+      {/* Active Jobs with Live Tracking */}
+      {activeJobs.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-2xl font-bold">Active Jobs - Live Tracking</h2>
+          {activeJobs.map((job) => (
+            <JobMapView
+              key={job.id}
+              jobLocation={job.location_coordinates}
+              workerId={job.worker_id}
+              jobTitle={job.title}
+              showRoute={true}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Recent Jobs */}
       <Card>
