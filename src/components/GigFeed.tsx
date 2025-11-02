@@ -78,26 +78,26 @@ const GigFeed = () => {
       <WorkerStats />
       <h1 className="text-3xl font-bold">Available Gigs</h1>
 
-      {jobs.length === 0 ? (
-        <Card className="bg-card/50">
-          <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground">No gigs available right now. Check back soon!</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <Tabs defaultValue="list" className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
-            <TabsTrigger value="list" className="flex items-center gap-2">
-              <List className="w-4 h-4" />
-              List View
-            </TabsTrigger>
-            <TabsTrigger value="map" className="flex items-center gap-2">
-              <MapIcon className="w-4 h-4" />
-              Map View
-            </TabsTrigger>
-          </TabsList>
+      <Tabs defaultValue={jobs.length === 0 ? "map" : "list"} className="w-full">
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="list" className="flex items-center gap-2">
+            <List className="w-4 h-4" />
+            List View
+          </TabsTrigger>
+          <TabsTrigger value="map" className="flex items-center gap-2">
+            <MapIcon className="w-4 h-4" />
+            Map View
+          </TabsTrigger>
+        </TabsList>
 
-          <TabsContent value="list" className="mt-6">
+        <TabsContent value="list" className="mt-6">
+          {jobs.length === 0 ? (
+            <Card className="bg-card/50">
+              <CardContent className="py-12 text-center">
+                <p className="text-muted-foreground">No gigs available right now. Check back soon!</p>
+              </CardContent>
+            </Card>
+          ) : (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {jobs.map((job) => (
                 <Card key={job.id} className="bg-card/50 backdrop-blur-sm hover:border-primary/50 transition-colors">
@@ -141,16 +141,16 @@ const GigFeed = () => {
                 </Card>
               ))}
             </div>
-          </TabsContent>
+          )}
+        </TabsContent>
 
-          <TabsContent value="map" className="mt-6">
-            <AvailableJobsMap 
-              jobs={jobs} 
-              onJobSelect={(job) => acceptJob(job.id)}
-            />
-          </TabsContent>
-        </Tabs>
-      )}
+        <TabsContent value="map" className="mt-6">
+          <AvailableJobsMap 
+            jobs={jobs} 
+            onJobSelect={(job) => acceptJob(job.id)}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
