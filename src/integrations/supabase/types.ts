@@ -14,7 +14,212 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      jobs: {
+        Row: {
+          created_at: string
+          customer_id: string
+          description: string
+          id: string
+          location: string | null
+          price: number
+          scheduled_time: string | null
+          status: string
+          title: string
+          type: string
+          updated_at: string
+          worker_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          description: string
+          id?: string
+          location?: string | null
+          price: number
+          scheduled_time?: string | null
+          status?: string
+          title: string
+          type: string
+          updated_at?: string
+          worker_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          description?: string
+          id?: string
+          location?: string | null
+          price?: number
+          scheduled_time?: string | null
+          status?: string
+          title?: string
+          type?: string
+          updated_at?: string
+          worker_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobs_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "jobs_worker_id_fkey"
+            columns: ["worker_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          availability: Json | null
+          created_at: string
+          email: string
+          id: string
+          name: string
+          rating: number | null
+          role: string
+          total_ratings: number | null
+          updated_at: string
+          user_id: string
+          wallet_balance: number | null
+        }
+        Insert: {
+          availability?: Json | null
+          created_at?: string
+          email: string
+          id?: string
+          name: string
+          rating?: number | null
+          role: string
+          total_ratings?: number | null
+          updated_at?: string
+          user_id: string
+          wallet_balance?: number | null
+        }
+        Update: {
+          availability?: Json | null
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          rating?: number | null
+          role?: string
+          total_ratings?: number | null
+          updated_at?: string
+          user_id?: string
+          wallet_balance?: number | null
+        }
+        Relationships: []
+      }
+      ratings: {
+        Row: {
+          comment: string | null
+          created_at: string
+          customer_id: string
+          id: string
+          job_id: string
+          rating: number
+          worker_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          customer_id: string
+          id?: string
+          job_id: string
+          rating: number
+          worker_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          customer_id?: string
+          id?: string
+          job_id?: string
+          rating?: number
+          worker_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ratings_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "ratings_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: true
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ratings_worker_id_fkey"
+            columns: ["worker_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          job_id: string | null
+          receiver_id: string | null
+          sender_id: string | null
+          type: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          job_id?: string | null
+          receiver_id?: string | null
+          sender_id?: string | null
+          type: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          job_id?: string | null
+          receiver_id?: string | null
+          sender_id?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_receiver_id_fkey"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "transactions_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
