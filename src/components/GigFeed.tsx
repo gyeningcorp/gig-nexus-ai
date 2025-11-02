@@ -10,6 +10,7 @@ import WorkerStats from "@/components/WorkerStats";
 import AvailableJobsMap from "./AvailableJobsMap";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import MaptilerTokenInput from "./MaptilerTokenInput";
+import { playNotificationSound } from "@/utils/notificationSound";
 
 type Job = {
   id: string;
@@ -35,7 +36,55 @@ const GigFeed = () => {
 
   useEffect(() => {
     fetchJobs();
-  }, []);
+
+    // Request notification permission
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+
+    // Subscribe to new job insertions in real-time
+    const channel = supabase
+      .channel('new-jobs-feed')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'jobs',
+          filter: 'status=eq.open'
+        },
+        (payload) => {
+          const newJob = payload.new as Job;
+          
+          // Add job to list at the top
+          setJobs(prev => [newJob, ...prev]);
+          
+          // Play notification sound
+          playNotificationSound();
+          
+          // Show toast notification
+          toast({
+            title: "🚗 New Job Available!",
+            description: `${newJob.title} - $${newJob.price.toFixed(2)}`,
+            duration: 5000,
+          });
+          
+          // Browser notification (if permission granted)
+          if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('New Job Available', {
+              body: `${newJob.title} - $${newJob.price.toFixed(2)}`,
+              icon: '/favicon.ico',
+              tag: newJob.id,
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [toast]);
 
   const fetchJobs = async () => {
     const { data, error } = await supabase
