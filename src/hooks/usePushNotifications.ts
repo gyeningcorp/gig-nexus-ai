@@ -11,6 +11,29 @@ export const usePushNotifications = (userId: string | undefined) => {
   useEffect(() => {
     if (!userId || !isNative) return;
 
+    const savePushToken = async (token: string) => {
+      try {
+        const platform = Capacitor.getPlatform();
+        const { error } = await supabase
+          .from('push_tokens')
+          .upsert({ 
+            user_id: userId, 
+            token, 
+            platform 
+          }, {
+            onConflict: 'user_id,token'
+          });
+
+        if (error) {
+          console.error('Error saving push token:', error);
+        } else {
+          console.log('Push token saved to database');
+        }
+      } catch (error) {
+        console.error('Error in savePushToken:', error);
+      }
+    };
+
     const setupPushNotifications = async () => {
       try {
         // Request permission
@@ -27,7 +50,7 @@ export const usePushNotifications = (userId: string | undefined) => {
         // Handle registration
         PushNotifications.addListener('registration', async (token) => {
           console.log('Push registration success, token:', token.value);
-          // Token saved - can be stored in database when types are updated
+          await savePushToken(token.value);
         });
 
         // Handle registration error
