@@ -44,7 +44,55 @@ const MyJobs = () => {
 
   useEffect(() => {
     fetchJobs();
-  }, [user, profile]);
+
+    // Subscribe to job updates for real-time changes
+    if (!user) return;
+
+    const channel = supabase
+      .channel('job-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'jobs',
+          filter: profile?.role === 'customer' 
+            ? `customer_id=eq.${user.id}` 
+            : `worker_id=eq.${user.id}`
+        },
+        (payload) => {
+          const updatedJob = payload.new as Job;
+          
+          // Update job in local state
+          setJobs(prev => prev.map(job => 
+            job.id === updatedJob.id ? updatedJob : job
+          ));
+
+          // Show notification for customer when job is accepted
+          if (profile?.role === 'customer' && updatedJob.status === 'in_progress') {
+            toast({
+              title: "Job Accepted!",
+              description: `A worker has accepted "${updatedJob.title}"`,
+              duration: 5000,
+            });
+          }
+
+          // Show notification for worker when customer confirms completion
+          if (profile?.role === 'worker' && updatedJob.status === 'completed') {
+            toast({
+              title: "Payment Received!",
+              description: `Customer confirmed job completion. Payment added to wallet.`,
+              duration: 5000,
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, profile, toast]);
 
   const fetchJobs = async () => {
     if (!user) return;

@@ -34,6 +34,36 @@ const CustomerDashboard = () => {
     if (user) {
       fetchDashboardData();
     }
+
+    // Subscribe to job updates for real-time dashboard refresh
+    if (!user) return;
+
+    const channel = supabase
+      .channel('dashboard-job-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'jobs',
+          filter: `customer_id=eq.${user.id}`
+        },
+        (payload) => {
+          // Refresh dashboard data when any job updates
+          fetchDashboardData();
+
+          // Show toast when job is accepted
+          const updatedJob = payload.new as any;
+          if (updatedJob.status === 'in_progress') {
+            toast.success(`Job "${updatedJob.title}" has been accepted by a worker!`);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   const fetchDashboardData = async () => {
