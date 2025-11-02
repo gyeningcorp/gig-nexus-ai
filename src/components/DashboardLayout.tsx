@@ -32,6 +32,8 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   ];
 
   const links = profile?.role === "worker" ? workerLinks : customerLinks;
+  
+  if (!profile?.role) return null; // Wait for role to load
 
   return (
     <div className="min-h-screen bg-background">

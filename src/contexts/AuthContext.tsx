@@ -8,11 +8,11 @@ type Profile = {
   user_id: string;
   name: string;
   email: string;
-  role: "worker" | "customer";
   rating: number;
   total_ratings: number;
   wallet_balance: number;
   availability: any[];
+  role?: "worker" | "customer"; // Will be fetched from user_roles
 };
 
 type AuthContextType = {
@@ -35,15 +35,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
 
   const fetchProfile = async (userId: string) => {
-    const { data, error } = await supabase
+    const { data: profileData, error: profileError } = await supabase
       .from("profiles")
       .select("*")
       .eq("user_id", userId)
       .single();
 
-    if (!error && data) {
-      setProfile(data as Profile);
-    }
+    if (profileError || !profileData) return;
+
+    // Fetch user role from user_roles table
+    const { data: roleData } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .single();
+
+    setProfile({
+      ...profileData,
+      role: roleData?.role as "worker" | "customer"
+    } as Profile);
   };
 
   useEffect(() => {

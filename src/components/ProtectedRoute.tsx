@@ -10,7 +10,7 @@ type ProtectedRouteProps = {
 const ProtectedRoute = ({ children, requireRole }: ProtectedRouteProps) => {
   const { user, profile, loading } = useAuth();
 
-  if (loading) {
+  if (loading || (user && !profile?.role)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-pulse text-muted-foreground">Loading...</div>
