@@ -1,23 +1,18 @@
-import { useState } from "react";
 import Hero from "@/components/Hero";
 import RoleSelection from "@/components/RoleSelection";
-import GigMarketplace from "@/components/GigMarketplace";
 import ServiceCategories from "@/components/ServiceCategories";
+import { useNavigate } from "react-router-dom";
 
 type UserRole = "worker" | "customer" | null;
 
 const Index = () => {
-  const [selectedRole, setSelectedRole] = useState<UserRole>(null);
-  const [showMarketplace, setShowMarketplace] = useState(false);
+  const navigate = useNavigate();
 
   const handleRoleSelect = (role: UserRole) => {
-    setSelectedRole(role);
-    setShowMarketplace(true);
+    if (role) {
+      navigate(`/get-started/${role}`);
+    }
   };
-
-  if (showMarketplace && selectedRole) {
-    return <GigMarketplace role={selectedRole} />;
-  }
 
   return (
     <main className="min-h-screen bg-background">
