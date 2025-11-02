@@ -17,6 +17,7 @@ export const useLocationTracking = (userId: string | undefined, shouldTrack: boo
     if (!userId || !shouldTrack) return;
 
     let watchId: number;
+    let updateInterval: NodeJS.Timeout;
 
     const startTracking = () => {
       if (!navigator.geolocation) {
@@ -29,6 +30,7 @@ export const useLocationTracking = (userId: string | undefined, shouldTrack: boo
         return;
       }
 
+      // Update location every 3 seconds for real-time tracking
       watchId = navigator.geolocation.watchPosition(
         async (position) => {
           const newLocation: Location = {
@@ -47,6 +49,8 @@ export const useLocationTracking = (userId: string | undefined, shouldTrack: boo
 
           if (error) {
             console.error('Error updating location:', error);
+          } else {
+            console.log('Location updated:', newLocation);
           }
         },
         (error) => {
@@ -55,7 +59,7 @@ export const useLocationTracking = (userId: string | undefined, shouldTrack: boo
         },
         {
           enableHighAccuracy: true,
-          timeout: 5000,
+          timeout: 10000,
           maximumAge: 0,
         }
       );
@@ -86,6 +90,9 @@ export const useLocationTracking = (userId: string | undefined, shouldTrack: boo
     return () => {
       if (watchId) {
         navigator.geolocation.clearWatch(watchId);
+      }
+      if (updateInterval) {
+        clearInterval(updateInterval);
       }
     };
   }, [userId, shouldTrack, toast]);

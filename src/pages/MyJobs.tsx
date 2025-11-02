@@ -74,7 +74,7 @@ const MyJobs = () => {
             if (updatedJob.status === 'in_progress') {
               toast({
                 title: "🎉 Job Accepted!",
-                description: `A worker is on their way for "${updatedJob.title}". Track them in real-time!`,
+                description: `A worker is on their way for "${updatedJob.title}". Track them in real-time on the map!`,
                 duration: 10000,
               });
             } else if (updatedJob.status === 'pending_confirmation') {
@@ -89,12 +89,24 @@ const MyJobs = () => {
                 description: `"${updatedJob.title}" is complete. Payment sent to worker.`,
                 duration: 5000,
               });
+            } else if (updatedJob.status === 'cancelled') {
+              toast({
+                title: "❌ Job Cancelled",
+                description: `"${updatedJob.title}" has been cancelled.`,
+                duration: 5000,
+              });
             }
           }
 
           // Notifications for WORKER
           if (profile?.role === 'worker') {
-            if (updatedJob.status === 'pending_confirmation') {
+            if (updatedJob.status === 'in_progress') {
+              toast({
+                title: "🎯 Job Accepted",
+                description: `You've accepted "${updatedJob.title}". Head to the location now!`,
+                duration: 10000,
+              });
+            } else if (updatedJob.status === 'pending_confirmation') {
               toast({
                 title: "⏰ Waiting for Customer",
                 description: `"${updatedJob.title}" marked complete. Awaiting customer confirmation.`,

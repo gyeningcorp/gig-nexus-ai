@@ -57,32 +57,49 @@ const CustomerDashboard = () => {
         (payload) => {
           const updatedJob = payload.new as any;
           
-          // When job is accepted, show prominent notification and highlight map
-          if (updatedJob.status === 'in_progress') {
-            // Refresh dashboard data
+          // When job is accepted
+          if (updatedJob.status === 'in_progress' && !activeJobs.some(j => j.id === updatedJob.id)) {
             fetchDashboardData();
-            
-            // Set newly accepted job for highlighting
             setNewlyAcceptedJobId(updatedJob.id);
             
-            // Show prominent toast notification
             toast.success(`🎉 Job Accepted!`, {
-              description: `A worker is on their way for "${updatedJob.title}". Track their location below.`,
+              description: `A worker is on their way for "${updatedJob.title}". Track their location in real-time below.`,
               duration: 10000,
             });
             
-            // Scroll to active jobs section after a brief delay
             setTimeout(() => {
               const activeJobsSection = document.getElementById('active-jobs-section');
               activeJobsSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }, 500);
             
-            // Remove highlight after 5 seconds
-            setTimeout(() => {
-              setNewlyAcceptedJobId(null);
-            }, 5000);
-          } else {
-            // For other updates, just refresh data
+            setTimeout(() => setNewlyAcceptedJobId(null), 5000);
+          } 
+          // When job is pending confirmation
+          else if (updatedJob.status === 'pending_confirmation') {
+            fetchDashboardData();
+            toast.info(`⏰ Job Completed - Action Required`, {
+              description: `Worker has completed "${updatedJob.title}". Please confirm to release payment.`,
+              duration: 15000,
+            });
+          }
+          // When job is completed
+          else if (updatedJob.status === 'completed') {
+            fetchDashboardData();
+            toast.success(`✅ Job Confirmed`, {
+              description: `"${updatedJob.title}" is complete. Payment has been sent to the worker.`,
+              duration: 5000,
+            });
+          }
+          // When job is cancelled
+          else if (updatedJob.status === 'cancelled') {
+            fetchDashboardData();
+            toast.error(`❌ Job Cancelled`, {
+              description: `"${updatedJob.title}" has been cancelled.`,
+              duration: 5000,
+            });
+          }
+          // For other updates
+          else {
             fetchDashboardData();
           }
         }
