@@ -13,6 +13,7 @@ import { useLocationTracking } from "@/hooks/useLocationTracking";
 import { SimulatedGPS, calculateDistance, estimateTravelTime } from "@/utils/simulatedGPS";
 import { Navigation, Clock, MapPin, CheckCircle } from "lucide-react";
 import ConnectionStatus from "@/components/ConnectionStatus";
+import LiveTrackingIndicator from "@/components/LiveTrackingIndicator";
 
 type Job = {
   id: string;
@@ -324,7 +325,12 @@ const MyJobs = () => {
     <ProtectedRoute>
       <DashboardLayout>
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold">My Jobs</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold">My Jobs</h1>
+            {hasActiveJobs && profile?.role === "worker" && (
+              <LiveTrackingIndicator isTracking={true} label="Location Tracking Active" />
+            )}
+          </div>
           <ConnectionStatus />
         </div>
 

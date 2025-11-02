@@ -262,21 +262,14 @@ const CustomerDashboard = () => {
           </div>
           <p className="text-muted-foreground">Track your worker's location in real-time</p>
           {activeJobs.map((job) => (
-            <div 
-              key={job.id} 
-              className={`transition-all duration-500 ${
-                newlyAcceptedJobId === job.id 
-                  ? 'ring-4 ring-green-500 ring-opacity-50 rounded-lg animate-pulse' 
-                  : ''
-              }`}
-            >
-              <JobMapView
-                jobLocation={job.location_coordinates}
-                workerId={job.worker_id}
-                jobTitle={job.title}
-                showRoute={true}
-              />
-            </div>
+            <JobMapView
+              key={job.id}
+              jobLocation={job.location_coordinates}
+              workerId={job.worker_id}
+              jobTitle={job.title}
+              showRoute={true}
+              isHighlighted={newlyAcceptedJobId === job.id}
+            />
           ))}
         </div>
       )}
