@@ -13,7 +13,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import Map from "@/components/Map";
 import { MapPin } from "lucide-react";
-import MapboxTokenInput from "@/components/MapboxTokenInput";
+import MaptilerTokenInput from "@/components/MaptilerTokenInput";
 
 const NewJob = () => {
   const navigate = useNavigate();
@@ -175,7 +175,7 @@ const NewJob = () => {
                   </div>
                   {showMap && (
                     <div className="space-y-2">
-                      <MapboxTokenInput onTokenSet={setMapboxToken} />
+                      <MaptilerTokenInput onTokenSet={setMapboxToken} />
                       {mapboxToken && (
                         <div className="border rounded-lg overflow-hidden">
                           <Map

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
+import maplibregl from 'maplibre-gl';
+import 'maplibre-gl/dist/maplibre-gl.css';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { MapPin, X } from 'lucide-react';
@@ -25,14 +25,12 @@ interface AvailableJobsMapProps {
 
 const AvailableJobsMap = ({ jobs, onJobSelect, accessToken }: AvailableJobsMapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<mapboxgl.Map | null>(null);
+  const map = useRef<maplibregl.Map | null>(null);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
-  const markersRef = useRef<mapboxgl.Marker[]>([]);
+  const markersRef = useRef<maplibregl.Marker[]>([]);
 
   useEffect(() => {
     if (!mapContainer.current || map.current || !accessToken) return;
-
-    mapboxgl.accessToken = accessToken;
 
     // Center on user's location or default
     navigator.geolocation.getCurrentPosition(
@@ -49,14 +47,14 @@ const AvailableJobsMap = ({ jobs, onJobSelect, accessToken }: AvailableJobsMapPr
   const initMap = (lat: number, lng: number) => {
     if (!mapContainer.current) return;
 
-    map.current = new mapboxgl.Map({
+    map.current = new maplibregl.Map({
       container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/streets-v12',
+      style: `https://api.maptiler.com/maps/streets-v2/style.json?key=${accessToken}`,
       center: [lng, lat],
       zoom: 12,
     });
 
-    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+    map.current.addControl(new maplibregl.NavigationControl(), 'top-right');
 
     // Add user location marker
     const el = document.createElement('div');
@@ -68,7 +66,7 @@ const AvailableJobsMap = ({ jobs, onJobSelect, accessToken }: AvailableJobsMapPr
     el.style.border = '3px solid white';
     el.style.boxShadow = '0 0 10px rgba(59, 130, 246, 0.5)';
 
-    new mapboxgl.Marker(el)
+    new maplibregl.Marker({ element: el })
       .setLngLat([lng, lat])
       .addTo(map.current);
   };
@@ -103,7 +101,7 @@ const AvailableJobsMap = ({ jobs, onJobSelect, accessToken }: AvailableJobsMapPr
         }
       });
 
-      const marker = new mapboxgl.Marker(el)
+      const marker = new maplibregl.Marker({ element: el })
         .setLngLat([job.location_coordinates.lng, job.location_coordinates.lat])
         .addTo(map.current!);
 
@@ -112,7 +110,7 @@ const AvailableJobsMap = ({ jobs, onJobSelect, accessToken }: AvailableJobsMapPr
 
     // Fit map to show all jobs
     if (jobs.length > 0 && jobs.some(j => j.location_coordinates)) {
-      const bounds = new mapboxgl.LngLatBounds();
+      const bounds = new maplibregl.LngLatBounds();
       jobs.forEach(job => {
         if (job.location_coordinates) {
           bounds.extend([job.location_coordinates.lng, job.location_coordinates.lat]);

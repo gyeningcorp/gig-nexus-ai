@@ -5,16 +5,16 @@ import { Button } from './ui/button';
 import { Alert, AlertDescription } from './ui/alert';
 import { ExternalLink } from 'lucide-react';
 
-interface MapboxTokenInputProps {
+interface MaptilerTokenInputProps {
   onTokenSet: (token: string) => void;
 }
 
-const MapboxTokenInput = ({ onTokenSet }: MapboxTokenInputProps) => {
+const MaptilerTokenInput = ({ onTokenSet }: MaptilerTokenInputProps) => {
   const [token, setToken] = useState('');
   const [savedToken, setSavedToken] = useState<string | null>(null);
 
   useEffect(() => {
-    const stored = localStorage.getItem('mapbox_token');
+    const stored = localStorage.getItem('maptiler_token');
     if (stored) {
       setSavedToken(stored);
       onTokenSet(stored);
@@ -23,7 +23,7 @@ const MapboxTokenInput = ({ onTokenSet }: MapboxTokenInputProps) => {
 
   const handleSave = () => {
     if (token.trim()) {
-      localStorage.setItem('mapbox_token', token.trim());
+      localStorage.setItem('maptiler_token', token.trim());
       setSavedToken(token.trim());
       onTokenSet(token.trim());
     }
@@ -33,12 +33,12 @@ const MapboxTokenInput = ({ onTokenSet }: MapboxTokenInputProps) => {
     return (
       <Alert className="mb-4">
         <AlertDescription className="flex items-center justify-between">
-          <span>Mapbox token configured ✓</span>
+          <span>Maptiler token configured ✓</span>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => {
-              localStorage.removeItem('mapbox_token');
+              localStorage.removeItem('maptiler_token');
               setSavedToken(null);
             }}
           >
@@ -53,10 +53,10 @@ const MapboxTokenInput = ({ onTokenSet }: MapboxTokenInputProps) => {
     <Card className="bg-card/50 backdrop-blur-sm mb-4">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <span>Mapbox Token Required</span>
+          <span>Maptiler Token Required</span>
         </CardTitle>
         <CardDescription>
-          To use maps, you need a free Mapbox public token.
+          To use maps, you need a free Maptiler API key (100k free map loads/month).
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -64,12 +64,12 @@ const MapboxTokenInput = ({ onTokenSet }: MapboxTokenInputProps) => {
           <p className="text-sm text-muted-foreground">
             1. Go to{' '}
             <a
-              href="https://account.mapbox.com/access-tokens/"
+              href="https://cloud.maptiler.com/account/keys/"
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary hover:underline inline-flex items-center gap-1"
             >
-              mapbox.com/access-tokens
+              cloud.maptiler.com/account/keys
               <ExternalLink className="w-3 h-3" />
             </a>
           </p>
@@ -77,7 +77,7 @@ const MapboxTokenInput = ({ onTokenSet }: MapboxTokenInputProps) => {
             2. Create a free account or sign in
           </p>
           <p className="text-sm text-muted-foreground">
-            3. Copy your "Default public token"
+            3. Copy your API key
           </p>
           <p className="text-sm text-muted-foreground">
             4. Paste it below:
@@ -87,7 +87,7 @@ const MapboxTokenInput = ({ onTokenSet }: MapboxTokenInputProps) => {
         <div className="flex gap-2">
           <Input
             type="text"
-            placeholder="pk.eyJ..."
+            placeholder="Your Maptiler API key..."
             value={token}
             onChange={(e) => setToken(e.target.value)}
             className="font-mono text-sm"
@@ -105,4 +105,4 @@ const MapboxTokenInput = ({ onTokenSet }: MapboxTokenInputProps) => {
   );
 };
 
-export default MapboxTokenInput;
+export default MaptilerTokenInput;

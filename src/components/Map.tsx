@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
+import maplibregl from 'maplibre-gl';
+import 'maplibre-gl/dist/maplibre-gl.css';
 
 interface Location {
   lat: number;
@@ -29,26 +29,24 @@ const Map = ({
   accessToken
 }: MapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<mapboxgl.Map | null>(null);
-  const markersRef = useRef<{ [key: string]: mapboxgl.Marker }>({});
+  const map = useRef<maplibregl.Map | null>(null);
+  const markersRef = useRef<{ [key: string]: maplibregl.Marker }>({});
   const [mapLoaded, setMapLoaded] = useState(false);
 
   // Initialize map
   useEffect(() => {
     if (!mapContainer.current || map.current || !accessToken) return;
 
-    mapboxgl.accessToken = accessToken;
-
     const centerLocation = jobLocation || workerLocation || customerLocation || { lat: 40.7128, lng: -74.0060 };
 
-    map.current = new mapboxgl.Map({
+    map.current = new maplibregl.Map({
       container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/streets-v12',
+      style: `https://api.maptiler.com/maps/streets-v2/style.json?key=${accessToken}`,
       center: [centerLocation.lng, centerLocation.lat],
       zoom: zoom,
     });
 
-    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+    map.current.addControl(new maplibregl.NavigationControl(), 'top-right');
 
     map.current.on('load', () => {
       setMapLoaded(true);
@@ -85,9 +83,9 @@ const Map = ({
     el.style.backgroundSize = 'contain';
     el.style.cursor = 'pointer';
 
-    markersRef.current.job = new mapboxgl.Marker(el)
+    markersRef.current.job = new maplibregl.Marker({ element: el })
       .setLngLat([jobLocation.lng, jobLocation.lat])
-      .setPopup(new mapboxgl.Popup().setHTML('<div class="font-semibold">Job Location</div>'))
+      .setPopup(new maplibregl.Popup().setHTML('<div class="font-semibold">Job Location</div>'))
       .addTo(map.current);
 
     map.current.flyTo({ center: [jobLocation.lng, jobLocation.lat], zoom: zoom });
@@ -108,9 +106,9 @@ const Map = ({
     el.style.height = '40px';
     el.style.backgroundSize = 'contain';
 
-    markersRef.current.worker = new mapboxgl.Marker(el)
+    markersRef.current.worker = new maplibregl.Marker({ element: el })
       .setLngLat([workerLocation.lng, workerLocation.lat])
-      .setPopup(new mapboxgl.Popup().setHTML('<div class="font-semibold">Worker Location</div>'))
+      .setPopup(new maplibregl.Popup().setHTML('<div class="font-semibold">Worker Location</div>'))
       .addTo(map.current);
   }, [workerLocation, mapLoaded]);
 
@@ -129,9 +127,9 @@ const Map = ({
     el.style.height = '40px';
     el.style.backgroundSize = 'contain';
 
-    markersRef.current.customer = new mapboxgl.Marker(el)
+    markersRef.current.customer = new maplibregl.Marker({ element: el })
       .setLngLat([customerLocation.lng, customerLocation.lat])
-      .setPopup(new mapboxgl.Popup().setHTML('<div class="font-semibold">Customer Location</div>'))
+      .setPopup(new maplibregl.Popup().setHTML('<div class="font-semibold">Customer Location</div>'))
       .addTo(map.current);
   }, [customerLocation, mapLoaded]);
 
@@ -141,15 +139,14 @@ const Map = ({
 
     const getRoute = async () => {
       const query = await fetch(
-        `https://api.mapbox.com/directions/v5/mapbox/driving/${workerLocation.lng},${workerLocation.lat};${jobLocation.lng},${jobLocation.lat}?steps=true&geometries=geojson&access_token=${mapboxgl.accessToken}`,
+        `https://api.maptiler.com/routing/route?point=${workerLocation.lat},${workerLocation.lng}&point=${jobLocation.lat},${jobLocation.lng}&key=${accessToken}`,
         { method: 'GET' }
       );
       const json = await query.json();
-      const data = json.routes[0];
-      const route = data.geometry.coordinates;
+      const route = json.paths[0].points.coordinates;
 
       if (map.current?.getSource('route')) {
-        (map.current.getSource('route') as mapboxgl.GeoJSONSource).setData({
+        (map.current.getSource('route') as maplibregl.GeoJSONSource).setData({
           type: 'Feature',
           properties: {},
           geometry: {
@@ -185,7 +182,7 @@ const Map = ({
       }
 
       // Calculate ETA
-      const duration = Math.round(data.duration / 60);
+      const duration = Math.round(json.paths[0].time / 60000);
       console.log(`ETA: ${duration} minutes`);
     };
 
