@@ -5,12 +5,19 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { Calendar } from "lucide-react";
+import JobMapView from "@/components/JobMapView";
 
 type Job = {
   id: string;
   title: string;
   scheduled_time: string | null;
   status: string;
+  worker_id: string | null;
+  customer_id: string;
+  location_coordinates?: {
+    lat: number;
+    lng: number;
+  };
 };
 
 const Schedule = () => {
@@ -31,7 +38,7 @@ const Schedule = () => {
     const { data, error } = await query.order("scheduled_time", { ascending: true });
 
     if (!error && data) {
-      setScheduledJobs(data);
+      setScheduledJobs(data as any);
     }
   };
 
@@ -50,22 +57,35 @@ const Schedule = () => {
         ) : (
           <div className="space-y-4">
             {scheduledJobs.map((job) => (
-              <Card key={job.id} className="bg-card/50 backdrop-blur-sm">
-                <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <CardTitle className="text-xl">{job.title}</CardTitle>
-                    <span className="text-sm text-muted-foreground capitalize">
-                      {job.status.replace("_", " ")}
-                    </span>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
-                    <span>{new Date(job.scheduled_time!).toLocaleString()}</span>
-                  </div>
-                </CardContent>
-              </Card>
+              <div key={job.id} className="space-y-4">
+                <Card className="bg-card/50 backdrop-blur-sm">
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <CardTitle className="text-xl">{job.title}</CardTitle>
+                      <span className="text-sm text-muted-foreground capitalize">
+                        {job.status.replace("_", " ")}
+                      </span>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4" />
+                      <span>{new Date(job.scheduled_time!).toLocaleString()}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Show map if job has location coordinates */}
+                {job.location_coordinates && (
+                  <JobMapView
+                    jobLocation={job.location_coordinates}
+                    workerId={job.worker_id || undefined}
+                    customerId={job.customer_id}
+                    jobTitle={job.title}
+                    showRoute={job.status === "in_progress" && !!job.worker_id}
+                  />
+                )}
+              </div>
             ))}
           </div>
         )}

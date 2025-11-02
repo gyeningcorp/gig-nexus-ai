@@ -21,6 +21,7 @@ export type Database = {
           description: string
           id: string
           location: string | null
+          location_coordinates: Json | null
           price: number
           scheduled_time: string | null
           status: string
@@ -35,6 +36,7 @@ export type Database = {
           description: string
           id?: string
           location?: string | null
+          location_coordinates?: Json | null
           price: number
           scheduled_time?: string | null
           status?: string
@@ -49,6 +51,7 @@ export type Database = {
           description?: string
           id?: string
           location?: string | null
+          location_coordinates?: Json | null
           price?: number
           scheduled_time?: string | null
           status?: string
@@ -78,6 +81,7 @@ export type Database = {
         Row: {
           availability: Json | null
           created_at: string
+          current_location: Json | null
           email: string
           id: string
           name: string
@@ -90,6 +94,7 @@ export type Database = {
         Insert: {
           availability?: Json | null
           created_at?: string
+          current_location?: Json | null
           email: string
           id?: string
           name: string
@@ -102,6 +107,7 @@ export type Database = {
         Update: {
           availability?: Json | null
           created_at?: string
+          current_location?: Json | null
           email?: string
           id?: string
           name?: string

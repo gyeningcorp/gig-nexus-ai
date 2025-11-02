@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import JobMapView from "@/components/JobMapView";
+import { useLocationTracking } from "@/hooks/useLocationTracking";
 
 type Job = {
   id: string;
@@ -17,6 +19,10 @@ type Job = {
   status: string;
   worker_id: string | null;
   customer_id: string;
+  location_coordinates?: {
+    lat: number;
+    lng: number;
+  };
 };
 
 const MyJobs = () => {
@@ -24,6 +30,10 @@ const MyJobs = () => {
   const [loading, setLoading] = useState(true);
   const { user, profile } = useAuth();
   const { toast } = useToast();
+  
+  // Track worker location for active jobs
+  const hasActiveJobs = jobs.some(job => job.status === "in_progress" && profile?.role === "worker");
+  useLocationTracking(user?.id, hasActiveJobs);
 
   useEffect(() => {
     fetchJobs();
@@ -39,7 +49,7 @@ const MyJobs = () => {
     const { data, error } = await query.order("created_at", { ascending: false });
 
     if (!error && data) {
-      setJobs(data);
+      setJobs(data as any);
     }
     setLoading(false);
   };
@@ -133,37 +143,55 @@ const MyJobs = () => {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="space-y-6">
             {jobs.map((job) => (
-              <Card key={job.id} className="bg-card/50 backdrop-blur-sm">
-                <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <CardTitle className="text-xl">{job.title}</CardTitle>
-                    <Badge variant={job.status === "completed" ? "default" : "secondary"} className="capitalize">
-                      {job.status.replace("_", " ")}
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-2">{job.description}</p>
-                </CardHeader>
+              <div key={job.id} className="space-y-4">
+                <Card className="bg-card/50 backdrop-blur-sm">
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <CardTitle className="text-xl">{job.title}</CardTitle>
+                      <Badge variant={
+                        job.status === "completed" ? "default" :
+                        job.status === "in_progress" ? "secondary" :
+                        job.status === "cancelled" ? "destructive" :
+                        "outline"
+                      } className="capitalize">
+                        {job.status.replace("_", " ")}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-2">{job.description}</p>
+                  </CardHeader>
 
-                <CardContent>
-                  <div className="text-lg font-semibold">${job.price.toFixed(2)}</div>
-                  <div className="text-sm text-muted-foreground capitalize">{job.type.replace("_", " ")}</div>
-                </CardContent>
+                  <CardContent>
+                    <div className="text-lg font-semibold">${job.price.toFixed(2)}</div>
+                    <div className="text-sm text-muted-foreground capitalize">{job.type.replace("_", " ")}</div>
+                  </CardContent>
 
-                <CardFooter className="gap-2">
-                  {profile?.role === "worker" && job.status === "in_progress" && (
-                    <Button variant="accent" className="w-full" onClick={() => completeJob(job)}>
-                      Mark Complete
-                    </Button>
-                  )}
-                  {profile?.role === "customer" && job.status === "open" && (
-                    <Button variant="destructive" className="w-full" onClick={() => cancelJob(job.id)}>
-                      Cancel Job
-                    </Button>
-                  )}
-                </CardFooter>
-              </Card>
+                  <CardFooter className="gap-2">
+                    {profile?.role === "worker" && job.status === "in_progress" && (
+                      <Button variant="accent" className="w-full" onClick={() => completeJob(job)}>
+                        Mark Complete
+                      </Button>
+                    )}
+                    {profile?.role === "customer" && job.status === "open" && (
+                      <Button variant="destructive" className="w-full" onClick={() => cancelJob(job.id)}>
+                        Cancel Job
+                      </Button>
+                    )}
+                  </CardFooter>
+                </Card>
+
+                {/* Show map for in-progress jobs with location coordinates */}
+                {job.status === "in_progress" && job.location_coordinates && (
+                  <JobMapView
+                    jobLocation={job.location_coordinates}
+                    workerId={job.worker_id || undefined}
+                    customerId={job.customer_id}
+                    jobTitle={job.title}
+                    showRoute={!!job.worker_id}
+                  />
+                )}
+              </div>
             ))}
           </div>
         )}

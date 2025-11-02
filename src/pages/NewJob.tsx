@@ -11,6 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import Map from "@/components/Map";
+import { MapPin } from "lucide-react";
 
 const NewJob = () => {
   const navigate = useNavigate();
@@ -25,6 +27,8 @@ const NewJob = () => {
     location: "",
     scheduled_time: "",
   });
+  const [locationCoordinates, setLocationCoordinates] = useState<{ lat: number; lng: number } | null>(null);
+  const [showMap, setShowMap] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,6 +51,7 @@ const NewJob = () => {
       price,
       customer_id: user?.id,
       scheduled_time: formData.scheduled_time || null,
+      location_coordinates: locationCoordinates as any,
     });
 
     if (jobError) {
@@ -144,6 +149,41 @@ const NewJob = () => {
                       required
                     />
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label>Pin Location on Map (Optional)</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowMap(!showMap)}
+                    >
+                      <MapPin className="w-4 h-4 mr-2" />
+                      {showMap ? "Hide Map" : "Show Map"}
+                    </Button>
+                  </div>
+                  {showMap && (
+                    <div className="border rounded-lg overflow-hidden">
+                      <Map
+                        jobLocation={locationCoordinates || undefined}
+                        onLocationSelect={(location) => {
+                          setLocationCoordinates(location);
+                          toast({
+                            title: "Location Set",
+                            description: `Coordinates: ${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}`,
+                          });
+                        }}
+                        className="w-full h-[300px]"
+                      />
+                    </div>
+                  )}
+                  {locationCoordinates && (
+                    <p className="text-sm text-muted-foreground">
+                      Location pinned: {locationCoordinates.lat.toFixed(4)}, {locationCoordinates.lng.toFixed(4)}
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
