@@ -85,6 +85,7 @@ export type Database = {
           email: string
           id: string
           name: string
+          push_token: string | null
           rating: number | null
           total_ratings: number | null
           updated_at: string
@@ -98,6 +99,7 @@ export type Database = {
           email: string
           id?: string
           name: string
+          push_token?: string | null
           rating?: number | null
           total_ratings?: number | null
           updated_at?: string
@@ -111,6 +113,7 @@ export type Database = {
           email?: string
           id?: string
           name?: string
+          push_token?: string | null
           rating?: number | null
           total_ratings?: number | null
           updated_at?: string

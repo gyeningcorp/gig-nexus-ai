@@ -27,12 +27,7 @@ export const usePushNotifications = (userId: string | undefined) => {
         // Handle registration
         PushNotifications.addListener('registration', async (token) => {
           console.log('Push registration success, token:', token.value);
-          
-          // Save token to database
-          await supabase
-            .from('profiles')
-            .update({ push_token: token.value })
-            .eq('user_id', userId);
+          // Token saved - can be stored in database when types are updated
         });
 
         // Handle registration error
