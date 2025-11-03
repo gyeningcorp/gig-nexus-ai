@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import Map from "@/components/Map";
@@ -31,6 +32,7 @@ const NewJob = () => {
   const [locationCoordinates, setLocationCoordinates] = useState<{ lat: number; lng: number } | null>(null);
   const [showMap, setShowMap] = useState(false);
   const [mapboxToken, setMapboxToken] = useState<string>('');
+  const [geocoding, setGeocoding] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem('mapbox_token');
@@ -39,9 +41,70 @@ const NewJob = () => {
     }
   }, []);
 
+  // Geocode address to coordinates using MapTiler API
+  const geocodeAddress = async (address: string) => {
+    if (!address || !mapboxToken) return;
+    
+    setGeocoding(true);
+    try {
+      const response = await fetch(
+        `https://api.maptiler.com/geocoding/${encodeURIComponent(address)}.json?key=${mapboxToken}`
+      );
+      const data = await response.json();
+      
+      if (data.features && data.features.length > 0) {
+        const [lng, lat] = data.features[0].center;
+        setLocationCoordinates({ lat, lng });
+        setShowMap(true);
+        toast({
+          title: "Location Found",
+          description: `Pinned to: ${data.features[0].place_name}`,
+        });
+      } else {
+        toast({
+          title: "Location Not Found",
+          description: "Please try a different address or pin manually on the map",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Geocoding error:', error);
+      toast({
+        title: "Geocoding Failed",
+        description: "Please pin location manually on the map",
+        variant: "destructive"
+      });
+    } finally {
+      setGeocoding(false);
+    }
+  };
+
+  // Auto-geocode when location is entered (with debounce)
+  useEffect(() => {
+    if (!formData.location || !mapboxToken) return;
+    
+    const timer = setTimeout(() => {
+      geocodeAddress(formData.location);
+    }, 1000); // Wait 1 second after user stops typing
+
+    return () => clearTimeout(timer);
+  }, [formData.location, mapboxToken]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+
+    // Validate location coordinates are set
+    if (!locationCoordinates) {
+      toast({
+        title: "Location Required",
+        description: "Please wait for automatic geocoding or pin the location on the map",
+        variant: "destructive"
+      });
+      setLoading(false);
+      setShowMap(true);
+      return;
+    }
 
     const price = parseFloat(formData.price);
 
@@ -150,19 +213,32 @@ const NewJob = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="location">Location</Label>
+                    <Label htmlFor="location">Location Address</Label>
                     <Input
                       id="location"
                       value={formData.location}
                       onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                      placeholder="Enter full address (e.g., 123 Main St, New York, NY)"
                       required
                     />
+                    {geocoding && (
+                      <p className="text-sm text-muted-foreground animate-pulse">
+                        🔍 Finding location...
+                      </p>
+                    )}
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label>Pin Location on Map (Optional)</Label>
+                    <Label className="flex items-center gap-2">
+                      Map Location 
+                      {locationCoordinates ? (
+                        <span className="text-green-500">✓ Set</span>
+                      ) : (
+                        <span className="text-yellow-500">⚠ Required</span>
+                      )}
+                    </Label>
                     <Button
                       type="button"
                       variant="outline"
@@ -173,30 +249,45 @@ const NewJob = () => {
                       {showMap ? "Hide Map" : "Show Map"}
                     </Button>
                   </div>
-                  {showMap && (
-                    <div className="space-y-2">
-                      <MaptilerTokenInput onTokenSet={setMapboxToken} />
-                      {mapboxToken && (
-                        <div className="border rounded-lg overflow-hidden">
-                          <Map
-                            jobLocation={locationCoordinates || undefined}
-                            onLocationSelect={(location) => {
-                              setLocationCoordinates(location);
-                              toast({
-                                title: "Location Set",
-                                description: `Coordinates: ${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}`,
-                              });
-                            }}
-                            className="w-full h-[300px]"
-                            accessToken={mapboxToken}
-                          />
-                        </div>
-                      )}
+                  
+                  {!mapboxToken && (
+                    <Alert className="bg-blue-500/10 border-blue-500/20">
+                      <MapPin className="h-4 w-4 text-blue-500" />
+                      <AlertTitle className="text-blue-500">MapTiler Token Required</AlertTitle>
+                      <AlertDescription className="text-blue-500/80">
+                        Enter your MapTiler token below to enable automatic geocoding and map pinning
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  <MaptilerTokenInput onTokenSet={setMapboxToken} />
+                  
+                  {showMap && mapboxToken && (
+                    <div className="border rounded-lg overflow-hidden">
+                      <Map
+                        jobLocation={locationCoordinates || undefined}
+                        onLocationSelect={(location) => {
+                          setLocationCoordinates(location);
+                          toast({
+                            title: "Location Manually Set",
+                            description: `Coordinates: ${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}`,
+                          });
+                        }}
+                        className="w-full h-[300px]"
+                        accessToken={mapboxToken}
+                      />
                     </div>
                   )}
+                  
                   {locationCoordinates && (
-                    <p className="text-sm text-muted-foreground">
-                      Location pinned: {locationCoordinates.lat.toFixed(4)}, {locationCoordinates.lng.toFixed(4)}
+                    <p className="text-sm text-green-600 dark:text-green-400 font-medium">
+                      ✓ Location pinned: {locationCoordinates.lat.toFixed(4)}, {locationCoordinates.lng.toFixed(4)}
+                    </p>
+                  )}
+                  
+                  {!locationCoordinates && mapboxToken && (
+                    <p className="text-sm text-yellow-600 dark:text-yellow-400">
+                      ⚠ Enter an address above for automatic location, or click on the map to pin manually
                     </p>
                   )}
                 </div>

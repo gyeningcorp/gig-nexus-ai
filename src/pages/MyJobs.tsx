@@ -458,6 +458,18 @@ const MyJobs = () => {
                     showRoute={!!job.worker_id}
                   />
                 )}
+
+                {/* Alert when location coordinates are missing */}
+                {job.status === "in_progress" && !job.location_coordinates && (
+                  <Alert className="bg-yellow-500/10 border-yellow-500/20">
+                    <MapPin className="h-4 w-4 text-yellow-500" />
+                    <AlertTitle className="text-yellow-500">No Job Location Found</AlertTitle>
+                    <AlertDescription className="text-yellow-500/80">
+                      This job was created without map coordinates. Real-time tracking is not available. 
+                      {profile?.role === "customer" && " Please ensure future jobs have location coordinates set."}
+                    </AlertDescription>
+                  </Alert>
+                )}
               </div>
             ))}
           </div>
