@@ -107,13 +107,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
+    // Trim whitespace from email (common mobile keyboard issue)
+    const trimmedEmail = email.trim();
+    
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: trimmedEmail,
       password
     });
 
-    if (!error) {
-      navigate("/dashboard");
+    if (!error && data.user) {
+      // Wait for profile to load before navigating (fixes mobile race condition)
+      try {
+        await fetchProfile(data.user.id);
+        navigate("/dashboard");
+      } catch (profileError) {
+        // Even if profile fails, still navigate (user is authenticated)
+        console.error("Profile fetch error:", profileError);
+        navigate("/dashboard");
+      }
     }
 
     return { error };

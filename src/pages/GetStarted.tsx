@@ -28,6 +28,9 @@ const GetStarted = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Trim whitespace from email (common mobile keyboard issue)
+    const trimmedEmail = formData.email.trim();
+    
     if (formData.password !== formData.confirmPassword) {
       toast({
         title: "Error",
@@ -37,27 +40,50 @@ const GetStarted = () => {
       return;
     }
 
+    if (formData.password.length < 6) {
+      toast({
+        title: "Error",
+        description: "Password must be at least 6 characters",
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (!role) return;
 
     setLoading(true);
-    const name = `${formData.firstName} ${formData.lastName}`;
-    const { error } = await signUp(formData.email, formData.password, name, role);
+    
+    try {
+      const name = `${formData.firstName.trim()} ${formData.lastName.trim()}`;
+      const { error } = await signUp(trimmedEmail, formData.password, name, role);
 
-    if (error) {
+      if (error) {
+        let errorMessage = error.message;
+        if (error.message.includes("already registered")) {
+          errorMessage = "This email is already registered. Please sign in instead.";
+        }
+        
+        toast({
+          title: "Signup Failed",
+          description: errorMessage,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Success!",
+          description: "Account created successfully. Redirecting to dashboard..."
+        });
+        setTimeout(() => navigate("/dashboard"), 1500);
+      }
+    } catch (err) {
       toast({
-        title: "Signup Failed",
-        description: error.message,
+        title: "Connection Error",
+        description: "Unable to connect. Please check your internet connection and try again.",
         variant: "destructive"
       });
-    } else {
-      toast({
-        title: "Success!",
-        description: "Account created successfully. Redirecting to dashboard..."
-      });
-      setTimeout(() => navigate("/dashboard"), 1500);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -99,9 +125,11 @@ const GetStarted = () => {
                   <Input
                     id="firstName"
                     name="firstName"
+                    autoComplete="given-name"
                     value={formData.firstName}
                     onChange={handleChange}
                     required
+                    aria-label="First Name"
                   />
                 </div>
 
@@ -110,9 +138,11 @@ const GetStarted = () => {
                   <Input
                     id="lastName"
                     name="lastName"
+                    autoComplete="family-name"
                     value={formData.lastName}
                     onChange={handleChange}
                     required
+                    aria-label="Last Name"
                   />
                 </div>
               </div>
@@ -123,9 +153,12 @@ const GetStarted = () => {
                   id="email"
                   name="email"
                   type="email"
+                  autoComplete="email"
+                  inputMode="email"
                   value={formData.email}
                   onChange={handleChange}
                   required
+                  aria-label="Email Address"
                 />
               </div>
 
@@ -135,9 +168,12 @@ const GetStarted = () => {
                   id="phone"
                   name="phone"
                   type="tel"
+                  autoComplete="tel"
+                  inputMode="tel"
                   value={formData.phone}
                   onChange={handleChange}
                   required
+                  aria-label="Phone Number"
                 />
               </div>
 
@@ -147,9 +183,11 @@ const GetStarted = () => {
                   id="password"
                   name="password"
                   type="password"
+                  autoComplete="new-password"
                   value={formData.password}
                   onChange={handleChange}
                   required
+                  aria-label="Password"
                 />
               </div>
 
@@ -159,9 +197,11 @@ const GetStarted = () => {
                   id="confirmPassword"
                   name="confirmPassword"
                   type="password"
+                  autoComplete="new-password"
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   required
+                  aria-label="Confirm Password"
                 />
               </div>
 

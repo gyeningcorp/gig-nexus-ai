@@ -18,19 +18,46 @@ const Login = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-
-    const { error } = await signIn(email, password);
-
-    if (error) {
+    
+    // Validate inputs
+    if (!email.trim() || !password) {
       toast({
-        title: "Login Failed",
-        description: error.message,
+        title: "Invalid Input",
+        description: "Please enter both email and password",
         variant: "destructive"
       });
+      return;
     }
+    
+    setLoading(true);
 
-    setLoading(false);
+    try {
+      const { error } = await signIn(email, password);
+
+      if (error) {
+        // More specific error messages for mobile users
+        let errorMessage = error.message;
+        if (error.message.includes("Invalid login credentials")) {
+          errorMessage = "Incorrect email or password. Please try again.";
+        } else if (error.message.includes("Email not confirmed")) {
+          errorMessage = "Please check your email and confirm your account.";
+        }
+        
+        toast({
+          title: "Login Failed",
+          description: errorMessage,
+          variant: "destructive"
+        });
+      }
+    } catch (err) {
+      toast({
+        title: "Connection Error",
+        description: "Unable to connect. Please check your internet connection and try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -60,9 +87,12 @@ const Login = () => {
                 <Input
                   id="email"
                   type="email"
+                  autoComplete="email"
+                  inputMode="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  aria-label="Email Address"
                 />
               </div>
 
@@ -71,9 +101,11 @@ const Login = () => {
                 <Input
                   id="password"
                   type="password"
+                  autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  aria-label="Password"
                 />
               </div>
 
